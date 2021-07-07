@@ -1,10 +1,7 @@
-var app = new Vue ( { 
-    el: "#app", 
-    vuetify: new Vuetify(),
-    data:{
-        page:"blog",
-        drawer:false,
-        selected_category:"all",
+var app = new Vue({
+    el: '#app',
+    data: {
+        page: "forum",
         categories:[
             "all",
             "clothing",
@@ -14,121 +11,268 @@ var app = new Vue ( {
             "coins",
             "keychains",
             "comic books",
-            "misc.",
+            "misc."
         ],
-        threads:[],
 
-        postings:[],
-
-        //for a new thread
         new_name:"",
         new_author:"",
         new_description:"",
         new_category:"all",
 
-        //for a new post on a thread
-        new_post_body:"",
         new_post_author:"",
+        new_post_body:"",
 
-        server_url:"http://localhost:8080"
-    }, 
-    created:function(){
-        this.getThreads();
+        filter_catigory: "all",
+        selectedPost: null,
+        postings: [],
+        postPosting: false,
+
+        threads: [{
+            name: "awefwaeaf",
+            author: "awfwaefwwa",
+            description: "",
+            category: "",
+            posts:[{
+                author:"awefwfae",
+                body:"aopwfijpeonso;ji",
+                post:{}
+            }]
+        },{
+            name: "wafeafwwfa",
+            author: "awfefwea",
+            description: "",
+            category: "",
+            posts:[{
+                author:"awefv",
+                body:"aewjofjvz;ojoi"
+            }]
+        },],
+        server_url: "http://localhost:8080",
+
+        threads: []
+
     },
+
+    created:function(){
+        this.getThreads(this.setThreads);
+    },
+
     methods:{
-        getThreads:function(){
-            fetch(this.server_url+"/thread").then(function(res){
-                res.json().then(function(data){
-                    app.threads= data;
+        setThreads: function(data){
+            app.threads=data;
+        },
+
+        getThreads: function(callback, link = "/thread"){
+            fetch(this.server_url+link).then(function(response){
+                response.json().then(function(data){
+                    callback(data)
+
                 })
-            });
+            })
         },
+        createThread: function(){
+            let newThread = {}
 
-        createThread:function(){
-            var new_thread={
-                name:this.new_name,
-                author:this.new_author,
-                description:this.new_description,
-                category:this.new_category,
-            };
-            fetch(this.server_url+"/thread",{
-                method: "POST",
-				headers: {
-					"Content-Type": "application/json"
-                },
-                body:JSON.stringify(new_thread)
-            }).then(function() {
-                app.getThreads();
-                app.new_name="";
-                app.new_author="";
-                app.category="all";
-                app.new_description="";
-                app.page="blog";
+            if(this.new_name != "" && this.new_author != ""){
 
-            });
-        },
-        deleteThread:function(thread_id){
-            fetch(this.server_url+"/thread/"+thread_id,{
-                method:"DELETE",
-                headers:{
-                    "Content-Type":"application/json"
+                myData = {
+                    name: this.new_name,
+                    author: this.new_author,
+                    description: this.new_description,
+                    category: this.new_category,
+                    posts: []
                 }
-            }).then(function(){
-                app.getThreads()})
+                newThread.name = this.new_name
+                newThread.author = this.new_author
+                newThread.description = this.new_description
+                newThread.category = this.new_category
+
+                fetch(this.server_url+"/thread", {
+                    method: "POST",
+                    body: JSON.stringify(myData),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                }).then(function(response){
+
+                })
+                
+                this.threads.push(newThread)
+
+                this.new_name = ""
+                this.new_category = "all"
+                this.new_author = ""
+                this.new_description = ""
+
+                this.page = "forum"
+
+            }
+            
         },
+        deleteThread: function(thread){
+            
+            this.threads = this.threads.filter(function(ele){ 
+                return ele != thread; 
+            });
+            fetch(this.server_url+"/thread/"+thread._id, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(function(response){
+
+            })
+        },
+        changePage: function(newString){
+            this.page = newString;
+        },
+        viewPost: function(thread){
+            this.selectedPost = thread
+            this.getAllPosts(this.selectedPost._id);
+            this.page = "post";
+        },
+        deletePost: function(post){
+            
+            //this.selectedPost.posts.splice(post, 1);
+
+            fetch(this.server_url+"/thread/"+this.selectedPost._id+"/"+post._id, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(function(response){
+                fetch(app.server_url+"/thread").then(function(response){
+
+                    response.json().then(function(data){
+                        app.threads=data;
+                        fetch(app.server_url+"/thread/"+app.selectedPost._id).then(function(response){
+                            response.json().then(function(data){
+                                app.postings = data.posts
+            
+                            })
+                        })  
+
+                    })
+                })
+            })
+
+        },
+        createPost: function(){
+            
+            myData = {
+                author: this.new_post_author, 
+                body: this.new_post_body, 
+                thread_id: this.selectedPost._id
+            }
+            fetch(this.server_url+"/thread/" + this.selectedPost._id, {
+                method: "POST",
+                body: JSON.stringify(myData),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(function(response){
+                fetch(app.server_url+"/thread").then(function(response){
+
+                    response.json().then(function(data){
+                        app.threads=data;
+                        fetch(app.server_url+"/thread/"+app.selectedPost._id).then(function(response){
+                            response.json().then(function(data){
+                                app.postings = data.posts
+            
+                            })
+                        })  
+
+                    })
+                })
+            })
+        },
+        getAllPosts: function(thread_id){
+            fetch(this.server_url+"/thread/"+thread_id).then(function(response){
+                response.json().then(function(data){
+                    app.postings=data.posts;
+                })
+            })
+        },
+        getThePosts: function(){
+            fetch(this.server_url+"/thread/"+this.selectedPost._id).then(function(response){
+                response.json().then(function(data){
+                    return data.posts
+
+                })
+            })        
+        },
+        antiMrClean: function(){
+            for(thread in this.threads){
+                if(this.threads[thread].author == "Mr. Clean" || this.threads[thread].author == ""){
+                    fetch(this.server_url+"/thread/"+this.threads[thread]._id, {
+                        method: "DELETE",
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    }).then(function(response){
+                        fetch(app.server_url+"/thread").then(function(response){
         
-        getPosts:function(thread_id){
-            fetch(this.server_url+"/thread/"+thread_id).then(function(res){
-                res.json().then(function(data){
-                    app.postings= data;
-                    console.log(data)
-                })
-            }).then(function(){
-                app.page="posts"
-            });
-        },
-
-        createPost:function(thread_id){
-            var new_post={
-                thread_id:thread_id,
-                author:this.new_post_author,
-                body:this.new_post_body
-            };
-            fetch(this.server_url+"/post",{
-                method: "POST",
-				headers: {
-					"Content-Type": "application/json"
-                },
-                body:JSON.stringify(new_post)
-            }).then(function() {
-                app.getPosts(thread_id);
-                app.new_post_author="";
-                app.new_post_body="";
-
-            });
-        },
-        deletePost:function(post){
-            fetch(this.server_url+"/post/"+post.thread_id+"/"+post._id,{
-                method:"DELETE",
-                headers:{
-                    "Content-Type":"application/json"
+                            response.json().then(function(data){
+                                app.threads=data;
+                                fetch(app.server_url+"/thread").then(function(response){
+                                    response.json().then(function(data){
+                                        app.threads=data;
+                                        
+                                    })
+                                })  
+                                
+                            })
+                        })
+                    })
                 }
-            }).then(function(){
-                app.getPosts(post.thread_id)})
+            }
+
         }
 
 
+
+        
     },
     computed:{
-        sorted_threads:function(){
-            if(this.selected_category == "all"){
-                return this.threads;
-            } else {
-                var sorted_threads = this.threads.filter(function(thread){
-                    return thread.category == app.selected_category;
-                });
-                return sorted_threads;
+        sorted_threads: function(){
+            if(this.filter_catigory == "all"){
+                return this.threads
+            }else{
+                ba = this.filter_catigory
+                return this.threads.filter(function(thread){
+                    return thread.category == ba;
+                })
+            }
+
+        },  
+        getPosts: function(){
+            if(this.selectedPost!=null){
+                return this.selectedPost
+            }else{
+                return this.threads
             }
         }
     }
+
 });
+
+
+/*
+postData = function(){
+    fetch(server_url)
+}
+setInterval(function(){
+    fetch(app.server_url+"/thread").then(function(response){
+
+        response.json().then(function(data){
+            app.threads=data;
+            fetch(app.server_url+"/thread").then(function(response){
+                response.json().then(function(data){
+                    app.threads=data;
+
+                })
+            })  
+
+        })
+    })
+},1000)*/
