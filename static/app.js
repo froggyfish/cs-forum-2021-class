@@ -47,7 +47,7 @@ var app = new Vue({
                 body:"aewjofjvz;ojoi"
             }]
         },],
-        server_url: "https://project-code-school.herokuapp.com/",
+        server_url: "http://localhost:8080",
 
         threads: []
 

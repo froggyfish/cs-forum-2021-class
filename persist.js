@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 function connect(callback){
-    let connectionString = `mongodb+srv://froggy:myCoolPassword@cluster0.cgzhh.mongodb.net/project?retryWrites=true&w=majority`
+    let connectionString = `mongodb+srv://froggy:myCoolPassword@cluster0.cgzhh.mongodb.net/forum_app?retryWrites=true&w=majority`
 
     console.log("connect to the db...");
 
