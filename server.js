@@ -169,9 +169,16 @@ server.delete(conStr+"/:tid/:pid",(req, res, next) => {
                 return;
             }
             res.status(201).json(thread)
+            req.local = {
+                error: "this was my error"
+            }
             
         })
 
+})
+
+server.use((req, res) =>{
+    console.log(req.local);
 })
 
 // GET /thread
